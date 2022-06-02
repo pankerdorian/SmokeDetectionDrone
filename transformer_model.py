@@ -32,10 +32,9 @@ transformer = transforms.Compose([transforms.Resize(225),
                                       transforms.ToTensor(),
                                       transforms.Normalize([0.5, 0.5, 0.5],
                                                            [0.5, 0.5, 0.5])])
-img_path = 'Assets/image_521.jpg'  # smoke
-img_path = 'Assets/image_2.jpg'  # neutral
-# img_path = 'Assets/82.jpg'  # our-smoke
-# img_path = 'Assets/fire_test02.png'  # our-fire
+
+
+img_path = 'image_99.jpg'  # our-fire
 img = Image.open(img_path).convert('RGB')
 predictions = ['Fire', 'Neutral', 'Smoke']
 predicted_index, confidence = predict(img)
