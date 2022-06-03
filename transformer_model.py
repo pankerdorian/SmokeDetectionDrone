@@ -10,7 +10,13 @@ from torchvision import datasets, transforms, models
 from PIL import Image
 
 # ml_model = torch.load('pre_trained_model.pt', map_location=torch.device('cpu'))
-
+ml_model = torch.load('pre_trained_model.pt')
+ml_model.eval()
+transformer = transforms.Compose([transforms.Resize(225),
+                                    transforms.CenterCrop(224),
+                                    transforms.ToTensor(),
+                                    transforms.Normalize([0.5, 0.5, 0.5],
+                                                        [0.5, 0.5, 0.5])])
 
 def predict(img):
     # transformer = ...
@@ -24,18 +30,12 @@ def predict(img):
 
     return [clas, confidence.item()]
 
+def main():
+    img_path = 'image_99.jpg'  # our-fire
+    img = Image.open(img_path).convert('RGB')
+    predictions = ['Fire', 'Neutral', 'Smoke']
+    predicted_index, confidence = predict(img)
+    print(predictions[predicted_index], confidence)
 
-ml_model = torch.load('pre_trained_model.pt')
-ml_model.eval()
-transformer = transforms.Compose([transforms.Resize(225),
-                                      transforms.CenterCrop(224),
-                                      transforms.ToTensor(),
-                                      transforms.Normalize([0.5, 0.5, 0.5],
-                                                           [0.5, 0.5, 0.5])])
-
-
-img_path = 'image_99.jpg'  # our-fire
-img = Image.open(img_path).convert('RGB')
-predictions = ['Fire', 'Neutral', 'Smoke']
-predicted_index, confidence = predict(img)
-print(predictions[predicted_index], confidence)
+if __name__ == '__main__':
+    main()
