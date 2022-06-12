@@ -6,6 +6,7 @@ from transformer_model import predict
 from smoke_detection import alarm, system_report
 from Wix import Wix
 import FireBase
+from coordinare_to_GPS import get_fire_cartesian
 
 def main():
     wix = Wix()
@@ -31,7 +32,8 @@ def main():
     smoke_detected = 1 if alarm(img) else 0
     print('done!')
         # TODO: check where is the interest point 
-        # TODO: find the current location from the picture using the known location 
+        # TODO: find the current location from the picture using the known location
+     
 
     # TODO: machine learning model
         # TODO: use the saved image and check what the prediction
@@ -60,7 +62,7 @@ def main():
         print('added event')
         # TODO: check if the event was inserted to Wix -> delete image from disk
     
-    
+   
 
 if __name__ == '__main__':
     main()
