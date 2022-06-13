@@ -173,11 +173,9 @@ def region_grow(regions, regions2):
             count_grow += 1
     return len(regions2) // 2 <= count_grow
 
-
 frames = []
 max_num_frames = 3
 min_num_frames = 3
-
 
 @timer_dec.timer
 def alarm(frame, block_size=(64, 64)):
@@ -225,7 +223,10 @@ def alarm(frame, block_size=(64, 64)):
     e = movement_direction(previous_regions, current_regions)
     # check grow
     r = region_grow(previous_regions, current_regions)
-    return r and e
+    if r and e:
+        return blocks2
+    else:
+        return False
     # color_filtered = cv2.bitwise_and(img, img, mask=mask)
     # gray = cv2.cvtColor(color_filtered, cv2.COLOR_BGR2GRAY)
     # hist = texture_detection(gray)
