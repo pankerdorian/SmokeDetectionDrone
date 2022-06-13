@@ -33,12 +33,12 @@ class Field:
         self.d = (self.x12, -self.x12 * np.tan(self.beta/2))
         
     def get_fire_cartesian(self, nf, mf):
-        if nf <0 or (nf > 720) or mf <0 or mf > 1280:
-            raise Exception("Fire point not in range nf : 0-720, mf : 0-1280")
+        # if nf <0 or (nf > 720) or mf <0 or mf > 1280:
+        #     raise Exception("Fire point not in range nf : 0-720, mf : 0-1280")
         xf = self.base[0] + self.x1 + (self.x12 - self.x1) * nf / self.N
         w = 2 * self.a[1] + 2 * (self.b[1] - self.a[1]) * (self.N - nf) / self.N
         yf = -(mf - self.M/2)/self.M * w / 2 + self.base[1]
-        return (xf, yf)
+        return f'{xf}, {yf}'
 
 field = Field(h=9)
 print(f"a = {field.a}")
