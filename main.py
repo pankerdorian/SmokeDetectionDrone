@@ -1,12 +1,26 @@
 import cv2
 import os
 import numpy as np
+import matplotlib.pyplot as plt
 from PIL import Image
 from transformer_model import predict
 from smoke_detection import alarm, system_report
 from Wix import Wix
 import FireBase
-from coordinare_to_GPS import get_fire_cartesian
+from coordinate_to_GPS import Field
+HOME_COORDINATES = '31.905399264755708, 34.78181596562009'
+
+def find_smoke_pixel(blocks):
+    # np.max(np.nonzero(blocks_of_smoke)[0])
+    # 1663
+    # np.nonzero(blocks_of_smoke)[1][np.argmax(np.nonzero(blocks_of_smoke)[0])]
+    # 1920
+    y_indexes, x_indexes = np.nonzero(blocks)
+    y = np.max(y_indexes)
+    x = x_indexes[np.argmax(y_indexes)]
+    # return "25.197148444069278, 55.27437639783683"
+    field = Field(h=9)
+    return field.get_fire_cartesian(y, x)
 
 def main():
     wix = Wix()
@@ -19,21 +33,18 @@ def main():
      
     # TODO: image processing model
         # TODO: use 2 frames that u saved before frome the drone 
-    imagePath = "120.jpg"
+    imagePath = "30.jpg"
     img = cv2.imread(imagePath)
-    imagePath = "121.jpg"
+    imagePath = "31.jpg"
     alarm(img)
     img = cv2.imread(imagePath)
     alarm(img)
 
-    imagePath = "122.jpg"
+    imagePath = "32.jpg"
     img = cv2.imread(imagePath)
         # TODO: save the result to a variable
-    smoke_detected = 1 if alarm(img) else 0
-    print('done!')
-        # TODO: check where is the interest point 
-        # TODO: find the current location from the picture using the known location
-     
+    blocks_of_smoke = alarm(img)
+    smoke_detected = 1 if blocks_of_smoke.any() else 0
 
     # TODO: machine learning model
         # TODO: use the saved image and check what the prediction
@@ -56,7 +67,11 @@ def main():
     is_fire_alarm = predictions[predicted_index] == 'Fire'
     if above_alarm_thresh or is_fire_alarm:
         download_url = FireBase.add_to_storage(imagePath)
-        event_data = {'Location': "25.197148444069278, 55.27437639783683", 'Image': download_url, 'Status': 'Waiting'}
+        if smoke_detected:
+            gps = find_smoke_pixel(blocks_of_smoke)
+        else:
+            gps = HOME_COORDINATES # TODO: if we can, change to drone coordinates
+        event_data = {'Location': gps, 'Image': download_url, 'Status': 'Waiting'}
         event_path = 'event'
         insert_result = wix.send_to_db(data=event_data, path=event_path)
         print('added event')
