@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import base64
 from Wix import Wix
+import threading
 
 import timer_dec
 
@@ -210,9 +211,12 @@ def process_frames(frames, block_size=(64, 64)):
     if len(previous_regions) == 0 or len(current_regions) == 0:
         # could also be True, we expect to recognize the change in the next frame/iteration
         return False
-    e = movement_direction(previous_regions, current_regions)
+    # e = movement_direction(previous_regions, current_regions)
+    e = threading.Thread(target=movement_direction, args=[previous_regions, current_regions])
+    e.start()
     # check grow
     r = region_grow(previous_regions, current_regions)
+    e.join()
     if r and e:
         return blocks2
     else:
