@@ -3,8 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from random import seed
 from random import randrange
-from math import exp
+from math import exp, sqrt, pow
 from csv import reader
+
 
 class Field:
     def __init__(self, h=0):
@@ -31,18 +32,24 @@ class Field:
         self.b = (self.x12, self.x12 * np.tan(self.beta/2))
         self.c = (self.x1, -self.x1 * np.tan(self.beta/2))
         self.d = (self.x12, -self.x12 * np.tan(self.beta/2))
-        
+
     def get_fire_cartesian(self, nf, mf):
         # if nf <0 or (nf > 720) or mf <0 or mf > 1280:
         #     raise Exception("Fire point not in range nf : 0-720, mf : 0-1280")
         xf = self.base[0] + self.x1 + (self.x12 - self.x1) * nf / self.N
-        w = 2 * self.a[1] + 2 * (self.b[1] - self.a[1]) * (self.N - nf) / self.N
+        w = 2 * self.a[1] + 2 * (self.b[1] - self.a[1]
+                                 ) * (self.N - nf) / self.N
         yf = -(mf - self.M/2)/self.M * w / 2 + self.base[1]
-        return f'{xf}, {yf}'
+        return xf, yf
 
-field = Field(h=9)
-print(f"a = {field.a}")
-print(f"b = {field.b}")
-print(f"c = {field.c}")
-print(f"d = {field.d}")
-print(f"p = {field.get_fire_cartesian(400, 400)}")
+# field = Field(h=9)
+# print(f"a = {field.a}")
+# print(f"b = {field.b}")
+# print(f"c = {field.c}")
+# print(f"d = {field.d}")
+# print(f"p = {field.get_fire_cartesian(400, 400)}")
+
+
+def gps_distance(gps1, gps2):
+    # sqrt((x1 - x2)^2 + (y1 - y2)^2)
+    return sqrt(pow(gps1[0] - gps2[0], 2) + pow(gps1[1] - gps2[1], 2))
