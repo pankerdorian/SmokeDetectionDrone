@@ -11,7 +11,7 @@ class Frame:
 
 
 class TelloSim:
-    def __init__(self, h=9):
+    def __init__(self, h=3):
         self.battery = 100
         self.height = h
         self.speed_x = 0
@@ -121,10 +121,13 @@ def control(route, simulation=False):
         path_thread = threading.Thread(target=drone_path, args=[tello, route])
         path_thread.start()
         while True:
+            frames = []
             status = get_status(tello)
-            frame_obj = tello.get_frame_read()
-            frame = frame_obj.frame
-            yield status, frame
+            for i in range(3):
+                frame_obj = tello.get_frame_read()
+                frame = frame_obj.frame
+                frames.append(frame)
+            yield tello, status, frames
             if time.time() - start > 60 or tello.get_battery() <= 15:
                 print('stopping')
                 break
@@ -134,6 +137,7 @@ def control(route, simulation=False):
         stop_all_drone_activity()
         path_thread.join()
         tello.streamoff()
+        tello.land()
         end = time.time()
         print(f'end: {end}')
         tello.end()
