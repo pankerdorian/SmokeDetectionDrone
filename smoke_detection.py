@@ -173,18 +173,8 @@ def region_grow(regions, regions2):
             count_grow += 1
     return len(regions2) // 2 <= count_grow
 
-frames = []
-max_num_frames = 3
-min_num_frames = 3
-
 @timer_dec.timer
-def alarm(frame, block_size=(64, 64)):
-    frames.append(frame)
-    n = len(frames)
-    if n > max_num_frames:
-        frames.pop(0)
-    if n < min_num_frames:
-        return False
+def process_frames(frames, block_size=(64, 64)):
     # get video frames
     img = frames[0]
     img2 = frames[1]
