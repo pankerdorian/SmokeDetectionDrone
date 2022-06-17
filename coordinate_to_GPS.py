@@ -8,9 +8,9 @@ from csv import reader
 
 
 class Field:
-    def __init__(self, h=0):
+    def __init__(self, drone_coordinates, h=0):
         self.h = h
-        self.base = (0, 0)
+        self.base = drone_coordinates
         self.a = (0, 0)
         self.b = (0, 0)
         self.c = (0, 0)

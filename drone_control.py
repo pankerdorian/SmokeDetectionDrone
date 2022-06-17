@@ -44,6 +44,18 @@ class TelloSim:
     def get_speed_z(self):
         return self.speed_z
 
+    def query_speed(self):
+        return 10
+
+    def set_speed(self):
+        print(f'speed set to: {speed}')
+
+    def rotate_clockwise(self, deg):
+        print(f'rotating clockwise {deg} degrees')
+
+    def rotate_counter_clockwise(self, deg):
+        print(f'rotating clockwise {deg} degrees')
+
     def get_frame_read(self):
         if not self.stream_on:
             raise Exception("stream is not on")
@@ -77,8 +89,22 @@ def drone_path(tello, route):
         if stop_all:
             print('stoping route')
             break
-        for direction, x in route:
-            tello.move(direction, x)
+        for i, instruction in enumerate(route):
+            if len(instruction) == 3:
+                direction, x, once = instruction
+                route.pop(i)
+            else:
+                direction, x = instruction
+            # keep the same speed (just to send a comand)
+            if direction == 'stay':
+                speed = float(tello.query_speed())
+                tello.set_speed(int(speed))
+            if direction == 'rotate_right':
+                tello.rotate_clockwise(x)
+            elif direction == 'rotate_left':
+                tello.rotate_counter_clockwise(x)
+            else:
+                tello.move(direction, x)
             time.sleep(1)
 
 
@@ -94,53 +120,34 @@ def get_status(tello):
 def get_frame(tello):
     frame_obj = tello.get_frame_read()
     frame = frame_obj.frame
-    return frame
+    return frawme
 
 
 stop_all = False
+
+
 def stop_all_drone_activity():
     global stop_all
     stop_all = True
 
 
-def control(route, simulation=False):
-    try:
-        if simulation:
-            tello = TelloSim()
-        else:
-            tello = Tello()
-        global stop_all
-        stop_all = False
-        tello.connect()
-        start = time.time()
-        print('start: ' + str(start))
-        print('battery: ' + str(tello.get_battery()))
-        tello.takeoff()
-        # start UDP stream
-        tello.streamon()
-        path_thread = threading.Thread(target=drone_path, args=[tello, route])
-        path_thread.start()
-        while True:
-            frames = []
-            status = get_status(tello)
-            for i in range(3):
-                frame_obj = tello.get_frame_read()
-                frame = frame_obj.frame
-                frames.append(frame)
-            yield tello, status, frames
-            if time.time() - start > 60 or tello.get_battery() <= 15:
-                print('stopping')
-                break
-    except Exception as e:
-        print(f'error: {e}')
-    finally:
-        stop_all_drone_activity()
-        path_thread.join()
-        tello.streamoff()
-        tello.land()
-        end = time.time()
-        print(f'end: {end}')
-        tello.end()
+def control(tello):
+    pass
+    # try:
+    #     global stop_all
+    #     stop_all = False
+    #     path_thread = threading.Thread(target=drone_path, args=[tello, route])
+    #     path_thread.start()
+    #     while True:
+
+    #         yield tello, status, frames
+    #         if time.time() - start > 60 or tello.get_battery() <= 15:
+    #             print('stopping')
+    #             break
+    # except Exception as e:
+    #     print(f'error: {e}')
+    # finally:
+    #     # stop_all_drone_activity()
 
 
 if __name__ == '__main__':
