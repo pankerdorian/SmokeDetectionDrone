@@ -142,25 +142,29 @@ def brain(tello, frame_obj, stop):
     plt.ion()  # make plt interactive
     plt.show()
     predictions = ['Fire', 'Neutral', 'Smoke']
-    w1 = 0.1
-    w2 = 0.9
-    alarm_threshold = 0.5  # (w1 + w2 = 1)
+    # (w1 + w2 = 1)
+    w1 = 0.15
+    w2 = 0.85
+    alarm_threshold = 0.92
     last_gps = (0, 0)
+    frame_count = 0
     while not stop():
         frames = []
         status = get_status(tello)
         for i in range(3):
             frame = frame_obj.frame
             frames.append(frame)
+        frame_count += 1
+        print(f'frame number: {frame_count}')
         img = frames[2]
-        plt.imshow(img)
+        img_for_transformer = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        plt.imshow(img_for_transformer)
         plt.pause(0.001)
         # our model
         blocks_of_smoke = process_frames(frames)
         smoke_detected = 1 if type(blocks_of_smoke) is not type(
             False) and blocks_of_smoke.any() else 0
         # Machine Learning model
-        img_for_transformer = img
         if type(img_for_transformer) is np.ndarray:
             img_for_transformer = Image.fromarray(img_for_transformer)
         [predicted_index, conf] = predict(img_for_transformer)
@@ -175,6 +179,8 @@ def brain(tello, frame_obj, stop):
 
         if above_alarm_thresh or is_fire_alarm:
             print('event found')
+            with open('confidence_score.txt', 'a') as f:
+                f.write(f'prediction confidence: {conf}\n')
             # don't send the same event twice
             if smoke_detected:
                 gps = find_smoke_pixel(tello, blocks_of_smoke)
@@ -186,10 +192,12 @@ def brain(tello, frame_obj, stop):
             imagePath = f"{uuid.uuid1()}.jpg"
             im = Image.fromarray(img)
             im.save(imagePath)
+            # TODO: start timer for #3
             # download_url = FireBase.add_to_storage(imagePath)
             # event_data = {'Location': f'{gps[0]}, {gps[1]}',
             #               'Image': download_url, 'Status': 'Waiting'}
             # insert_result = wix.send_to_db(data=event_data, path='event')
+            # TODO: stop timer for #3
             event_data = {'Location': f'{gps[0]}, {gps[1]}',
                           'Image': imagePath, 'Status': 'Waiting'}
             with open('events.txt', 'a') as f:

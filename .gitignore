@@ -5,3 +5,6 @@ firedetectiondrone-9b202-738c5aa6b297.json
 *.jpg
 *.png
 *.mp4
+confidence_score.txt
+events.txt
+statuses.txt
