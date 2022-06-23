@@ -29,7 +29,8 @@ def find_smoke_pixel(drone, blocks):
     # return "25.197148444069278, 55.27437639783683"
     field = Field(drone_coordinates=HOME_GPS_COORDINATES, h=drone.get_height())
     gps = field.get_fire_cartesian(y, x)
-    print(f'gps: {gps}')
+    # with open('gps.txt', 'a') as f:
+    #     f.write(f'{gps}\n')
     return HOME_GPS_COORDINATES
 
 
@@ -47,9 +48,11 @@ x = 490
 barbecue_route = [
     ['up', 100, 'once'],
     ['forward', x],
-    ['rotate_right', 75],
+    ['rotate_right', 80],
     ['stay', 1],
-    ['rotate_right', 180 - 75],
+    ['stay', 1],
+    ['stay', 1],
+    ['rotate_right', 100],
     ['forward', x],
     ['rotate_right', 180]
 ]
@@ -63,7 +66,7 @@ room_route = [
     ['rotate_right', 180],
 ]
 stay_route = [
-    ['up', 50, 'once'],
+    ['up', 100, 'once'],
     ['stay', 1]
 ]
 
@@ -86,6 +89,7 @@ def use_route(tello, route, index):
         tello.move(direction, x)
     time.sleep(1)
 
+
 def go_home(tello, route, i):
     while i < len(route):
         use_route(tello, route, i)
@@ -94,7 +98,6 @@ def go_home(tello, route, i):
 
 def main():
     stop = False
-    wix = Wix()
     tello = Tello()
     tello.connect()
     # start UDP stream
@@ -110,19 +113,21 @@ def main():
         tello.takeoff()
         time.sleep(5)
         i_route = 0
-        route = room_route
+        # route = barbecue_route
+        route = stay_route
         number_of_instructions = len(route)
         stop = False
         brain_thread.start()
         while not stop:
             if tello.get_battery() <= 15:
                 print('going home')
-                go_home(tello, room_route, i_route)
+                go_home(tello, route, i_route)
                 stop = True
                 break
-            r = room_route[i_route]
-            use_route(tello, room_route, i_route)
-            if r != room_route[i_route]: # check if we popped from route ('once' command)
+            r = route[i_route]
+            use_route(tello, route, i_route)
+            # check if we popped from route ('once' command)
+            if r != route[i_route]:
                 i_route -= 1
                 number_of_instructions -= 1
             i_route = (i_route + 1) % number_of_instructions
@@ -139,13 +144,15 @@ def main():
 
 
 def brain(tello, frame_obj, stop):
+    wix = Wix()
     plt.ion()  # make plt interactive
     plt.show()
     predictions = ['Fire', 'Neutral', 'Smoke']
     # (w1 + w2 = 1)
     w1 = 0.15
     w2 = 0.85
-    alarm_threshold = 0.92
+    # alarm_threshold = 0.92
+    alarm_threshold = 0.5
     last_gps = (0, 0)
     frame_count = 0
     while not stop():
@@ -159,7 +166,7 @@ def brain(tello, frame_obj, stop):
         img = frames[2]
         img_for_transformer = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         plt.imshow(img_for_transformer)
-        plt.pause(0.001)
+        plt.pause(0.0001)
         # our model
         blocks_of_smoke = process_frames(frames)
         smoke_detected = 1 if type(blocks_of_smoke) is not type(
@@ -173,30 +180,34 @@ def brain(tello, frame_obj, stop):
             smoke_detected * w1 + conf * w2 > alarm_threshold))
         is_fire_alarm = predictions[predicted_index] == 'Fire'
         status_data = status
-        # insert_result = wix.send_to_db(data=status_data, path='status')
+        insert_result = wix.send_to_db(data=status_data, path='status')
         with open('statuses.txt', 'a') as f:
             f.write(f'{status_data}\n')
 
+        if not (above_alarm_thresh or is_fire_alarm):
+            with open('confidence_score.txt', 'a') as f:
+                f.write(
+                    f'confidence: {predictions[predicted_index]}: {conf}\n')
         if above_alarm_thresh or is_fire_alarm:
             print('event found')
             with open('confidence_score.txt', 'a') as f:
-                f.write(f'prediction confidence: {conf}\n')
+                f.write(f'EVENT: {predictions[predicted_index]}: {conf}\n')
             # don't send the same event twice
             if smoke_detected:
                 gps = find_smoke_pixel(tello, blocks_of_smoke)
             else:
                 gps = HOME_GPS_COORDINATES  # TODO: if we can, change to drone coordinates
             if gps_distance(gps, last_gps) < 0.1:
-                continue
+                pass
             last_gps = gps
             imagePath = f"{uuid.uuid1()}.jpg"
-            im = Image.fromarray(img)
+            im = Image.fromarray(img_for_transformer)
             im.save(imagePath)
             # TODO: start timer for #3
-            # download_url = FireBase.add_to_storage(imagePath)
-            # event_data = {'Location': f'{gps[0]}, {gps[1]}',
-            #               'Image': download_url, 'Status': 'Waiting'}
-            # insert_result = wix.send_to_db(data=event_data, path='event')
+            download_url = FireBase.add_to_storage(imagePath)
+            event_data = {'Location': f'{gps[0]}, {gps[1]}',
+                          'Image': download_url, 'Status': 'Waiting'}
+            insert_result = wix.send_to_db(data=event_data, path='event')
             # TODO: stop timer for #3
             event_data = {'Location': f'{gps[0]}, {gps[1]}',
                           'Image': imagePath, 'Status': 'Waiting'}
